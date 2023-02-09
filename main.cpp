@@ -97,22 +97,23 @@ class NFA {
     }
 };
 
-NFA* GenerateNFAWithEpsilon(string r)
+NFA* GenerateNFAWithEpsilon(string regex)
 {
     stack<NFA*> nfaStack;
     NFA* currentNFA = NULL;
 
-    for(char c: r)
+    for(char c: regex)
     {
         switch(c)
         {
+            // Create a new independent NFA when '(' is encountered
             case '(': 
                 if(currentNFA != NULL)
                     nfaStack.push(currentNFA);
                 currentNFA = new NFA();
 
             break;
-
+            // Merge the NFA on top of the stack with the current NFA when ')' is encountered
             case ')':
                 if(currentNFA != NULL)
                 {
@@ -128,15 +129,15 @@ NFA* GenerateNFAWithEpsilon(string r)
                     return NULL;
                 }
             break;
-
+            // Add a Plus Transition to the current NFA when '*' is encountered
             case '+':
                 currentNFA->AddPlusTransition();
             break;
-
+            // Add a Star Transition to the current NFA when '-' is encountered
             case '*':
                 currentNFA->AddStarTransition();
             break;
-
+            // When any other char is encountered it must be a literal so add a transition to the current NFA
             default:
                 currentNFA->AddTransition(currentNFA->end->id, c, new Node());
         }
@@ -146,11 +147,13 @@ NFA* GenerateNFAWithEpsilon(string r)
 
 int main()
 {
+    // Get the input from file
     ifstream inputFile("input.txt");
-    string r,w, temp;
-    inputFile >> r >> w;
+    string regex,w, temp;
+    inputFile >> regex >> w;
 
-    NFA* regexNFA = GenerateNFAWithEpsilon(r);
+    // Generate the NFA for the regex
+    NFA* regexNFA = GenerateNFAWithEpsilon(regex);
     if(regexNFA == NULL)
     {
         cout << "Invalid Regex" << endl;
