@@ -71,7 +71,8 @@ class NFA {
             nodes[it->first] = it->second;
         }
         end = nfa->end;
-        // TODO: Delete reference to nfa
+        // Delete reference to nfa
+        delete nfa;
     }
 
     void PrintNFA()
@@ -96,12 +97,8 @@ class NFA {
     }
 };
 
-int main()
+NFA* GenerateNFAWithEpsilon(string r)
 {
-    ifstream inputFile("input.txt");
-    string r,w, temp;
-    inputFile >> r >> w;
-
     stack<NFA*> nfaStack;
     NFA* currentNFA = NULL;
 
@@ -128,8 +125,7 @@ int main()
                 }
                 else
                 {
-                    cout << "Invalid Regex" << endl;
-                    return -1;
+                    return NULL;
                 }
             break;
 
@@ -145,5 +141,21 @@ int main()
                 currentNFA->AddTransition(currentNFA->end->id, c, new Node());
         }
     }
-    currentNFA->PrintNFA();
+    return currentNFA;
+}
+
+int main()
+{
+    ifstream inputFile("input.txt");
+    string r,w, temp;
+    inputFile >> r >> w;
+
+    NFA* regexNFA = GenerateNFAWithEpsilon(r);
+    if(regexNFA == NULL)
+    {
+        cout << "Invalid Regex" << endl;
+        return -1;
+    }
+
+    regexNFA->PrintNFA();
 } 
