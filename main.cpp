@@ -86,9 +86,6 @@ bool QueueHasFinalState(deque<Node*> q)
         for(Node* n : q.front()->epClosure)
             if(n->isFinal)
                 return true;
-        
-        auto front = q.front();
-        q.pop_front();
     }
     return false;
 }
