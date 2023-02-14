@@ -4,6 +4,7 @@
 #include<unordered_map>
 #include<vector>
 #include<stack>
+#include<queue>
 
 using namespace std;
 
@@ -67,19 +68,19 @@ class NFA {
     // Add a transition from the end of this nfa to the start of the other nfa
     void Merge(NFA* nfa)
     {
+        // If the is being ORed
         if(nfa->hasOrNode)
         {
             Node* commonNode = new Node();
-            // nfa->end->AddTransition('e', commonNode);
-            // start->AddTransition('e', nfa->start);
-            // end->AddTransition('e', commonNode);
-            // nfa->end = commonNode;
-            AddTransition(start->id, 'e', nfa->start);
-            AddTransition(end->id, 'e', commonNode);
+            // Add a new node to the end of the given NFA
             nfa->AddTransition(nfa->end->id, 'e', commonNode);
+            // Add an epsilon transtiton from the start of the current NFA to the start of the given NFA
+            nodes[start->id]->AddTransition('e', nfa->start);
+            // Add an epsilon transition from the end of the current NFA to the new end of the given NFA
+            nodes[end->id]->AddTransition('e', nfa->end);
         }
 
-        // Add epsilon transition from end of current NFA to start of given NFA
+        // Add epsilon transition from end of current NFA to start of given NFA if the NFA is not being ORed
         if(!nfa->hasOrNode)
             nodes[end->id]->AddTransition('e', nfa->nodes[nfa->start->id]);
         // Add the nodes of given NFA to current NFA's list
@@ -90,9 +91,15 @@ class NFA {
 
         end = nfa->end;
         
-        
         // Delete reference to nfa
         delete nfa;
+    }
+
+    bool Traverse(string input)
+    {
+        int depth = 0;
+        queue<Node*> nodeQueue;
+        nodeQueue.p
     }
 
     void PrintNFA()
@@ -121,6 +128,7 @@ NFA* GenerateNFAWithEpsilon(string regex)
 {
     stack<NFA*> nfaStack;
     NFA* currentNFA = NULL;
+    bool shouldOr = false;
 
     for(char c: regex)
     {
@@ -131,6 +139,11 @@ NFA* GenerateNFAWithEpsilon(string regex)
                 if(currentNFA != NULL)
                     nfaStack.push(currentNFA);
                 currentNFA = new NFA();
+                if(shouldOr)
+                {
+                    shouldOr = false;
+                    currentNFA->hasOrNode = true;
+                }
 
             break;
             // Merge the NFA on top of the stack with the current NFA when ')' is encountered
@@ -157,11 +170,9 @@ NFA* GenerateNFAWithEpsilon(string regex)
             case '*':
                 currentNFA->AddStarTransition();
             break;
-
+            // Mark the next NFA as being ORed
             case '|':
-                nfaStack.push(currentNFA);
-                currentNFA = new NFA();
-                currentNFA->hasOrNode = true;
+                shouldOr = true;
                 break;
             // When any other char is encountered it must be a literal so add a transition to the current NFA
             default:
@@ -187,4 +198,4 @@ int main()
     }
 
     regexNFA->PrintNFA();
-} 
+}
