@@ -12,7 +12,6 @@ using namespace std;
 static int nodeId = 1;
 
 class Node;
-
 set<Node*> Union(set<Node*> a, set<Node*> b);
 
 class Node {
@@ -55,7 +54,6 @@ class Node {
             }
             return num;
         }
-
         // No idea why this works
         set<Node*> FindEpsilonClosure(Node* orig, set<Node*>& origSet)
         {            
@@ -79,24 +77,18 @@ set<Node*> Union(set<Node*> a, set<Node*> b)
 
 bool QueueHasFinalState(deque<Node*> q)
 {
-    // cout << "\nPrinting Final Reachability\n";
     int size = q.size();
     while(size--)
     {
-        // cout << q.front()->id << " ";
         if(q.front()->isFinal)
             return true;
 
         for(Node* n : q.front()->epClosure)
-        {
-            // cout << n->id << " ";
             if(n->isFinal)
                 return true;
-        }
         
         auto front = q.front();
         q.pop_front();
-        q.push_back(front);
     }
     return false;
 }
@@ -122,20 +114,17 @@ class NFA {
         nodes[id]->AddTransition(inp, n);
         end = n;
     }
-
     // Add an epsilon transition from end to start
     void AddPlusTransition()
     {
         nodes[end->id]->AddTransition('e', start);
     }
-
     // Add an epsilon transition from start to end and another from end to start
     void AddStarTransition()
     {
         nodes[start->id]->AddTransition('e', end);
         nodes[end->id]->AddTransition('e', start);
     }
-
     // Merge this nfa and the provided NFA
     // Add a transition from the end of this nfa to the start of the other nfa
     void Merge(NFA* nfa)
@@ -151,7 +140,6 @@ class NFA {
             // Add an epsilon transition from the end of the current NFA to the new end of the given NFA
             nodes[end->id]->AddTransition('e', nfa->end);
         }
-
         // Add epsilon transition from end of current NFA to start of given NFA if the NFA is not being ORed
         if(!nfa->hasOrNode)
             nodes[end->id]->AddTransition('e', nfa->nodes[nfa->start->id]);
@@ -160,10 +148,7 @@ class NFA {
         {
             nodes[it->first] = it->second;
         }
-
-        end = nfa->end;
-        
-        
+        end = nfa->end;        
         // Delete reference to nfa
         delete nfa;
     }
@@ -208,40 +193,6 @@ class NFA {
         else
             return false;
     }
-
-    void PrintNFA()
-    {
-        cout << "Start: " << start->id << " " << "End: " << end->id << endl;
-
-        for(unordered_map<int, Node*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
-        {
-            cout << it->first << endl;
-            for(unordered_map<char,vector<Node*>>::iterator it1 = it->second->next.begin(); it1 != it->second->next.end(); ++it1)
-            {
-                cout << it1->first << ": ";
-                for(Node* n : it1->second)
-                {
-                    cout << n->id << " ";
-                }
-                cout << endl;
-            }
-            cout << endl;
-            
-        }
-    }
-
-    void PrintEpsilonClosure()
-    {
-        for(unordered_map<int, Node*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
-        {
-            cout << it->first << ": ";
-            for(Node* n: it->second->epClosure)
-            {
-                cout << n->id << " ";
-            }
-            cout << endl << endl;
-        }
-    }
 };
 
 NFA* GenerateNFAWithEpsilon(string regex)
@@ -264,7 +215,6 @@ NFA* GenerateNFAWithEpsilon(string regex)
                     shouldOr = false;
                     currentNFA->hasOrNode = true;
                 }
-
             break;
             // Merge the NFA on top of the stack with the current NFA when ')' is encountered
             case ')':
@@ -319,9 +269,7 @@ void Simulate(NFA* nfa, string w)
             right = w.length();
         }
         else
-        {
             right--;
-        }
 
         if(left > right)
         {
@@ -331,7 +279,6 @@ void Simulate(NFA* nfa, string w)
             left++;
         }
     }
-
     cout << ans << "#" << endl;
 }
 
@@ -341,7 +288,6 @@ int main()
     ifstream inputFile("input.txt");
     string regex,w, temp;
     inputFile >> regex >> w;
-
     // Generate the NFA for the regex
     NFA* regexNFA = GenerateNFAWithEpsilon(regex);
     if(regexNFA == NULL)
@@ -349,9 +295,5 @@ int main()
         cout << "Invalid Regex" << endl;
         return -1;
     }
-
-    // Test the input against the NFA
-    cout << regexNFA->Traverse("abab") << endl;
-
     Simulate(regexNFA, w);
 }
