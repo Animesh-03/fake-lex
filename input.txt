@@ -1,2 +1,2 @@
-(((a)((((a)(b))|((b)(a)))*))(b)) 
-aaaabaaabbaab
+(((a)(((((a)((b)*))(a))|(((b)((a)*))(b)))*))(a))
+aaaabbbbaaabbb

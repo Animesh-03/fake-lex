@@ -5,16 +5,22 @@
 #include<vector>
 #include<stack>
 #include<queue>
+#include<set>
 
 using namespace std;
 
 static int nodeId = 1;
+
+class Node;
+
+set<Node*> Union(set<Node*> a, set<Node*> b);
 
 class Node {
     public:
         int id;
         bool isFinal;
         unordered_map<char,vector<Node*>> next;
+        set<Node*> epClosure;
 
         Node()
         {
@@ -27,7 +33,73 @@ class Node {
         {
             next[inp].push_back(n);
         }
+
+        int AddClosureToQueue(deque<Node*>& q, char c)
+        {
+            int n = 0;
+            for(Node* closure : next[c])
+            {
+                q.push_front(closure);
+                n++;
+            }
+            return n;
+        }
+
+        int AddEpsilonClosureToQueue(deque<Node*>& q)
+        {
+            int num = 0;
+            for(Node* n : epClosure)
+            {
+                q.push_back(n);
+                num++;
+            }
+            return num;
+        }
+
+        // No idea why this works
+        set<Node*> FindEpsilonClosure(Node* orig, set<Node*>& origSet)
+        {            
+            for(Node* node : next['e'])
+            {
+                if(epClosure.find(node) != epClosure.end())
+                    continue;
+                epClosure.insert(node);
+                epClosure = Union(node->FindEpsilonClosure(orig, origSet), epClosure);
+            }
+            return epClosure;
+        }
 };
+
+set<Node*> Union(set<Node*> a, set<Node*> b)
+{
+    set<Node*> u = a;
+    u.insert(b.begin(), b.end());
+    return u;
+}
+
+bool QueueHasFinalState(deque<Node*> q)
+{
+    // cout << "\nPrinting Final Reachability\n";
+    int size = q.size();
+    while(size--)
+    {
+        // cout << q.front()->id << " ";
+        if(q.front()->isFinal)
+            return true;
+
+        for(Node* n : q.front()->epClosure)
+        {
+            // cout << n->id << " ";
+            if(n->isFinal)
+                return true;
+        }
+        
+        auto front = q.front();
+        q.pop_front();
+        q.push_back(front);
+    }
+    return false;
+}
 
 class NFA {
     public:
@@ -91,15 +163,50 @@ class NFA {
 
         end = nfa->end;
         
+        
         // Delete reference to nfa
         delete nfa;
     }
 
+    void FindClosures()
+    {
+        for(unordered_map<int, Node*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
+        {
+            nodes[it->first]->FindEpsilonClosure(it->second, it->second->epClosure);
+        }
+    }
+
     bool Traverse(string input)
     {
-        int depth = 0;
-        queue<Node*> nodeQueue;
-        nodeQueue.p
+        int depth = 0, i = 0;
+        deque<Node*> nodeQueue, nodeQueue1;
+        nodeQueue.push_back(start);
+
+        while(i < input.length() && depth < 1000 && !nodeQueue.empty())
+        {
+            int size = nodeQueue.size();
+            // First get all the epsilon closures and store them in q1
+            while(size--)
+            {
+                Node* first = nodeQueue.front();
+                nodeQueue.pop_front();
+                int n = first->AddEpsilonClosureToQueue(nodeQueue1);
+                // Then for each node in q1 use a symbol in the string to get the next nodes
+                while(n--)
+                {
+                    Node* second = nodeQueue1.front();
+                    nodeQueue1.pop_front();
+                    second->AddClosureToQueue(nodeQueue, input[i]);
+                }
+                depth++;
+            }
+            i++;
+        }
+        // If the nodes remaining in the queue has a final node or if one of the nodes has an epsilon closure containing final state then return true
+        if(QueueHasFinalState(nodeQueue))
+            return true;
+        else
+            return false;
     }
 
     void PrintNFA()
@@ -120,6 +227,19 @@ class NFA {
             }
             cout << endl;
             
+        }
+    }
+
+    void PrintEpsilonClosure()
+    {
+        for(unordered_map<int, Node*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
+        {
+            cout << it->first << ": ";
+            for(Node* n: it->second->epClosure)
+            {
+                cout << n->id << " ";
+            }
+            cout << endl << endl;
         }
     }
 };
@@ -179,7 +299,40 @@ NFA* GenerateNFAWithEpsilon(string regex)
                 currentNFA->AddTransition(currentNFA->end->id, c, new Node());
         }
     }
+    currentNFA->end->isFinal = true;
+    currentNFA->FindClosures();
     return currentNFA;
+}
+
+void Simulate(NFA* nfa, string w)
+{
+    int left = 0, right = w.length();
+    string ans = "";
+    
+    while(left < w.length())
+    {
+        string s = w.substr(left, right - left);
+        if(nfa->Traverse(s))
+        {
+            ans += "$" + s;
+            left = right;
+            right = w.length();
+        }
+        else
+        {
+            right--;
+        }
+
+        if(left > right)
+        {
+            right = w.length();
+            ans += "@";
+            ans += w[left];
+            left++;
+        }
+    }
+
+    cout << ans << "#" << endl;
 }
 
 int main()
@@ -197,5 +350,8 @@ int main()
         return -1;
     }
 
-    regexNFA->PrintNFA();
+    // Test the input against the NFA
+    cout << regexNFA->Traverse("abab") << endl;
+
+    Simulate(regexNFA, w);
 }
