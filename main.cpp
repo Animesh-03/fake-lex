@@ -33,12 +33,14 @@ class NFA {
     Node* start;
     Node* end;
     unordered_map<int, Node*> nodes;
+    bool hasOrNode;
 
     NFA()
     {
         start = new Node();
         nodes[start->id] = start;
         end = start;
+        hasOrNode = false;
     }
 
     void AddTransition(int id, char inp, Node* n)
@@ -65,12 +67,30 @@ class NFA {
     // Add a transition from the end of this nfa to the start of the other nfa
     void Merge(NFA* nfa)
     {
-        nodes[end->id]->AddTransition('e', nfa->nodes[nfa->start->id]);
+        if(nfa->hasOrNode)
+        {
+            Node* commonNode = new Node();
+            // nfa->end->AddTransition('e', commonNode);
+            // start->AddTransition('e', nfa->start);
+            // end->AddTransition('e', commonNode);
+            // nfa->end = commonNode;
+            AddTransition(start->id, 'e', nfa->start);
+            AddTransition(end->id, 'e', commonNode);
+            nfa->AddTransition(nfa->end->id, 'e', commonNode);
+        }
+
+        // Add epsilon transition from end of current NFA to start of given NFA
+        if(!nfa->hasOrNode)
+            nodes[end->id]->AddTransition('e', nfa->nodes[nfa->start->id]);
+        // Add the nodes of given NFA to current NFA's list
         for(unordered_map<int, Node*>::iterator it = nfa->nodes.begin(); it != nfa->nodes.end(); ++it)
         {
             nodes[it->first] = it->second;
         }
+
         end = nfa->end;
+        
+        
         // Delete reference to nfa
         delete nfa;
     }
@@ -137,6 +157,12 @@ NFA* GenerateNFAWithEpsilon(string regex)
             case '*':
                 currentNFA->AddStarTransition();
             break;
+
+            case '|':
+                nfaStack.push(currentNFA);
+                currentNFA = new NFA();
+                currentNFA->hasOrNode = true;
+                break;
             // When any other char is encountered it must be a literal so add a transition to the current NFA
             default:
                 currentNFA->AddTransition(currentNFA->end->id, c, new Node());
