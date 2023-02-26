@@ -186,19 +186,20 @@ class NFA {
         {
             int size = nodeQueue.size();
             // First get all the epsilon closures and store them in q1
-            while(size--)
+            while(!nodeQueue.empty())
             {
                 Node* first = nodeQueue.front();
                 nodeQueue.pop_front();
                 int n = first->AddEpsilonClosureToQueue(nodeQueue1);
                 // Then for each node in q1 use a symbol in the string to get the next nodes
-                while(n--)
-                {
-                    Node* second = nodeQueue1.front();
-                    nodeQueue1.pop_front();
-                    second->AddClosureToQueue(nodeQueue, input[i]);
-                }
+                
                 depth++;
+            }
+            while(!nodeQueue1.empty())
+            {
+                Node* second = nodeQueue1.front();
+                nodeQueue1.pop_front();
+                second->AddClosureToQueue(nodeQueue, input[i]);
             }
             i++;
         }
@@ -310,7 +311,8 @@ void Simulate(NFA* nfa, string w)
     string ans = "";
     
     while(left < w.length())
-    {
+    {           
+
         string s = w.substr(left, right - left);
         if(nfa->Traverse(s))
         {
@@ -323,7 +325,7 @@ void Simulate(NFA* nfa, string w)
             right--;
         }
 
-        if(left > right)
+        if(left >= right && left != w.length())
         {
             right = w.length();
             ans += "@";
@@ -349,9 +351,6 @@ int main()
         cout << "Invalid Regex" << endl;
         return -1;
     }
-
-    // Test the input against the NFA
-    cout << regexNFA->Traverse("abab") << endl;
 
     Simulate(regexNFA, w);
 }
